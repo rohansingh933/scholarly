@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Essay help | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap essay-grid">
+
+  <section>
+    <h1 style="font-size:2rem">Essay help</h1>
+    <p class="muted">Get feedback on your draft, or help getting started. The coach tells you what to change and why. You write the essay.</p>
+    {% if sch %}<p class="tag" style="display:inline-block">For {{ sch.name }}</p>{% endif %}
+
+    <form class="panel" method="post" action="{{ url_for('essay_coach_page') }}" autocomplete="off" data-busy="Reading your essay. This can take up to a minute.">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      {% if sch %}<input type="hidden" name="s" value="{{ sch.id }}">{% endif %}
+
+      <fieldset>
+        <legend class="legend">What do you need?</legend>
+        <label class="check"><input type="radio" name="mode" value="draft"{% if form.mode != 'start' %} checked{% endif %}> Feedback on my draft</label>
+        <label class="check"><input type="radio" name="mode" value="start"{% if form.mode == 'start' %} checked{% endif %}> Help me start (questions and an outline, no draft needed)</label>
+      </fieldset>
+
+      <div class="field">
+        <label for="question">Essay question</label>
+        <textarea id="question" name="question" style="min-height:72px" maxlength="800">{{ form.question }}</textarea>
+        <span class="hint">Paste the exact question from the application.</span>
+      </div>
+      <div class="field" style="max-width:220px">
+        <label for="limit">Word limit (optional)</label>
+        <input type="number" id="limit" name="limit" min="50" max="5000" value="{{ form.limit }}">
+      </div>
+      <div class="field">
+        <label for="draft">Your draft{% if words %} ({{ words }} words){% endif %}</label>
+        <textarea id="draft" name="draft" style="min-height:220px">{{ form.draft }}</textarea>
+        <span class="hint">Up to about 2,000 words. Leave empty if you chose "Help me start".</span>
+      </div>
+
+      {% if free_ok %}
+        <p class="notice" style="background:var(--green-bg);color:var(--green)">Free for students: you have {{ left.user_left }} of {{ left.user_limit }} reviews left today.</p>
+      {% elif server_provider %}
+        <p class="notice">You've used today's free reviews{% if left.global_left == 0 %} (the site's daily limit is reached){% endif %}. They come back tomorrow, or open the box below to use your own key.</p>
+      {% else %}
+        <p class="notice">Free essay help isn't switched on yet. Open the box below and use your own key.</p>
+      {% endif %}
+
+      <details class="byo"{% if not free_ok %} open{% endif %}>
+        <summary>Use my own key instead</summary>
+        <p class="hint" style="margin-top:.6rem">Your own key has no daily limit from us. Anyone with an AI account can create one.</p>
+        <div class="formgrid">
+          <div class="field">
+            <label for="provider">AI provider</label>
+            <select id="provider" name="provider">
+              <option value="gemini"{% if form.provider != 'openai' %} selected{% endif %}>Google Gemini (free tier)</option>
+              <option value="openai"{% if form.provider == 'openai' %} selected{% endif %}>OpenAI (paid)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="api_key">Your API key</label>
+            <input type="password" id="api_key" name="api_key" autocomplete="off" spellcheck="false">
+            <span class="hint">Scholarly doesn't keep it.</span>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" data-remember-key> Remember this key on this device</label>
+        <p class="hint" style="margin:-.3rem 0 .8rem">It stays in this browser only and is never saved on our server. Don't tick this on a shared or school computer.
+          <span data-key-note></span> <button type="button" class="linklike" data-forget-key hidden>Forget saved key</button></p>
+        <p class="hint">Need a key? Create a free one in <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</p>
+      </details>
+
+      <button class="btn btn-gold" type="submit">Get feedback</button>
+      <p class="fineprint" style="margin-top:.8rem">Scholarly doesn't save your essay. It is sent to {% if server_provider == 'openai' %}OpenAI{% else %}Google Gemini{% endif %} (or the provider whose key you use) to get the feedback, and that provider's own terms apply to what you send.</p>
+    </form>
+  </section>
+
+  <section aria-live="polite">
+    {% if result %}
+      <div class="panel feedback">
+        {{ result }}
+      </div>
+      <p class="fineprint">These are suggestions. Check each one against what the scholarship asks for, and keep the essay in your own words.</p>
+    {% else %}
+      <div class="panel">
+        <h2>How it works</h2>
+        <ul class="plainlist">
+          <li>Paste the question and your draft, then press Get feedback.</li>
+          <li>You get what already works, the changes to make most important first, and questions that help you add real detail.</li>
+          <li>Not started yet? Choose "Help me start" and you get questions to answer and a simple outline.</li>
+          <li>Change your essay, then paste it again for another round.</li>
+        </ul>
+        <p class="fineprint">It never writes the essay for you. Scholarship panels read many essays and notice text that doesn't sound like the student.</p>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+</div>
+{% endblock %}

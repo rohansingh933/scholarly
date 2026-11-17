@@ -1,0 +1,63 @@
+{% macro select(name, options, value, placeholder) -%}
+<select name="{{ name }}" id="f-{{ name }}">
+  <option value="">{{ placeholder }}</option>
+  {%- for k, v in options %}
+  <option value="{{ k }}"{% if value is not none and value|string == k|string %} selected{% endif %}>{{ v }}</option>
+  {%- endfor %}
+</select>
+{%- endmacro %}
+
+{% macro state_select(value) -%}
+<select name="state" id="f-state">
+  <option value="">Any state</option>
+  {%- for st in STATES %}
+  <option{% if value == st %} selected{% endif %}>{{ st }}</option>
+  {%- endfor %}
+</select>
+{%- endmacro %}
+
+{# One scholarship in a list. The coloured rail on the left is the deadline. #}
+{% macro row(r, saved, show_match) -%}
+{% set s = r.row %}{% set dl = r.deadline %}{% set mt = r.match %}
+<article class="row row-{{ dl.state }}">
+  <div class="rail">
+    {% if dl.state in ('open', 'soon') %}
+      <span class="rail-num">{{ dl.days }}</span><span class="rail-unit">{{ 'day' if dl.days == 1 else 'days' }} left</span>
+    {% elif dl.state == 'closed' %}
+      <span class="rail-word">Closed</span>
+    {% else %}
+      <span class="rail-word">No fixed date</span>
+    {% endif %}
+  </div>
+  <div class="row-main">
+    <h3><a href="{{ url_for('detail', sid=s.id) }}">{{ s.name }}</a></h3>
+    <p class="provider">{{ s.provider }}</p>
+    <p class="amount">{{ s.amount_text or 'Amount not stated' }}</p>
+    <p class="when">{{ dl.text }}{% if dl.state != 'rolling' and s.deadline_note %}. {{ s.deadline_note }}{% endif %}</p>
+    <ul class="tags">
+      <li class="tag tag-{{ s.provider_type }}">{{ 'Government' if s.provider_type == 'government' else 'Private' }}</li>
+      {% if s.essay_required %}<li class="tag">Essay needed</li>{% endif %}
+      {% if s.max_income is not none or s.income_rules %}<li class="tag">Income limit</li>{% endif %}
+      {% if s.min_percentage is not none %}<li class="tag">Min. {{ '%g'|format(s.min_percentage) }}% marks</li>{% endif %}
+      {% if s.source == 'seed' and not s.verified_on %}<li class="tag tag-warn">Details unverified</li>{% endif %}
+    </ul>
+    {% if show_match and mt %}
+      <p class="fit fit-{{ mt.status }}">
+        <strong>{{ 'Eligible' if mt.status == 'eligible' else 'Maybe eligible' }}</strong>
+        {{ mt.ok[:2]|join('; ') }}
+        {% if mt.unknown %}<span class="confirm">{{ mt.unknown|length }} to confirm</span>{% endif %}
+      </p>
+    {% endif %}
+  </div>
+  <div class="row-actions">
+    <a class="btn btn-small" href="{{ url_for('detail', sid=s.id) }}">View details</a>
+    {% if current_user %}
+      <form method="post" action="{{ url_for('toggle_save', sid=s.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+        <button class="btn btn-small btn-ghost" type="submit" aria-pressed="{{ 'true' if s.id in saved else 'false' }}">{{ 'Saved' if s.id in saved else 'Save' }}</button>
+      </form>
+    {% endif %}
+  </div>
+</article>
+{%- endmacro %}

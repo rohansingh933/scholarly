@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if sid else 'Add' }} scholarship | Scholarly{% endblock %}
+{% macro val(k) %}{{ d[k] if d[k] is defined and d[k] is not none else '' }}{% endmacro %}
+{% macro group(name, options, legend) %}
+<fieldset>
+  <legend class="legend">{{ legend }}</legend>
+  <div class="checkgrid">
+    {% for k, v in options %}
+    <label class="check"><input type="checkbox" name="{{ name }}" value="{{ k }}"{% if (k|string) in (d[name] or []) %} checked{% endif %}> {{ v }}</label>
+    {% endfor %}
+  </div>
+  <p class="hint">Leave all unticked for no restriction.</p>
+</fieldset>
+{% endmacro %}
+{% block content %}
+<div class="page">
+<div class="wrap" style="max-width:860px">
+  <p><a href="{{ url_for('admin') }}">Back to admin</a></p>
+  <h1 style="font-size:2rem">{{ 'Edit scholarship' if sid else 'Add a scholarship' }}</h1>
+
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+    <section class="panel">
+      <h2>Basics</h2>
+      <div class="field"><label for="name">Name</label><input type="text" id="name" name="name" required value="{{ val('name') }}"></div>
+      <div class="formgrid">
+        <div class="field"><label for="provider">Provider</label><input type="text" id="provider" name="provider" required value="{{ val('provider') }}"></div>
+        <div class="field"><label for="provider_type">Type</label>
+          <select id="provider_type" name="provider_type">
+            <option value="government"{% if d.provider_type == 'government' %} selected{% endif %}>Government</option>
+            <option value="private"{% if d.provider_type != 'government' %} selected{% endif %}>Private</option>
+          </select></div>
+      </div>
+      <div class="field"><label for="description">Description</label><textarea id="description" name="description">{{ val('description') }}</textarea></div>
+      <div class="formgrid">
+        <div class="field"><label for="amount_text">Amount (as shown to students)</label><input type="text" id="amount_text" name="amount_text" value="{{ val('amount_text') }}"></div>
+        <div class="field"><label for="amount_per_year">Amount per year in ₹ (for sorting)</label><input type="number" id="amount_per_year" name="amount_per_year" value="{{ val('amount_per_year') }}"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Who can apply</h2>
+      {{ group('courses', COURSES, 'Courses') }}
+      {{ group('levels', LEVELS, 'Levels') }}
+      {{ group('years', YEARS, 'Years of study') }}
+      {{ group('categories', CATEGORIES + [('minority', 'Minority community')], 'Categories') }}
+      <div class="formgrid">
+        <div class="field"><label for="gender">Gender</label>
+          <select id="gender" name="gender">
+            <option value="any">Any</option>
+            <option value="female"{% if d.gender == 'female' %} selected{% endif %}>Women only</option>
+            <option value="male"{% if d.gender == 'male' %} selected{% endif %}>Men only</option>
+          </select></div>
+        <div class="field"><label for="states">States (comma separated, blank = all)</label><input type="text" id="states" name="states" value="{{ val('states') }}"></div>
+        <div class="field"><label for="min_age">Minimum age</label><input type="number" id="min_age" name="min_age" value="{{ val('min_age') }}"></div>
+        <div class="field"><label for="max_age">Maximum age</label><input type="number" id="max_age" name="max_age" value="{{ val('max_age') }}"></div>
+        <div class="field"><label for="max_income">Family income cap per year (₹)</label><input type="number" id="max_income" name="max_income" value="{{ val('max_income') }}"></div>
+        <div class="field"><label for="min_percentage">Minimum marks (%)</label><input type="text" id="min_percentage" name="min_percentage" value="{{ val('min_percentage') }}"></div>
+      </div>
+      <div class="field"><label for="income_rules">Income cap by category (optional)</label><input type="text" id="income_rules" name="income_rules" placeholder="sc:450000,st:450000,obc:200000" value="{{ val('income_rules') }}"><span class="hint">Use when the cap differs by category. Overrides the single cap above for those categories.</span></div>
+      <label class="check"><input type="checkbox" name="disability_only" value="1"{% if d.disability_only %} checked{% endif %}> Only for students with a disability</label>
+      <div class="field"><label for="needs_check">Condition students must check themselves (optional)</label><input type="text" id="needs_check" name="needs_check" placeholder="e.g. Only for top-20 rankers at select IITs" value="{{ val('needs_check') }}"><span class="hint">Anything the filter can't test. The scholarship then shows as "Maybe eligible" with this note.</span></div>
+      <div class="field"><label for="keywords">Keywords (comma separated)</label><input type="text" id="keywords" name="keywords" value="{{ val('keywords') }}"></div>
+    </section>
+
+    <section class="panel">
+      <h2>What students must prepare</h2>
+      <div class="field"><label for="documents">Documents (one per line)</label><textarea id="documents" name="documents">{{ val('documents') }}</textarea></div>
+      <label class="check"><input type="checkbox" name="essay_required" value="1"{% if d.essay_required %} checked{% endif %}> An essay is required</label>
+      <div class="field"><label for="essay_details">Essay details</label><input type="text" id="essay_details" name="essay_details" value="{{ val('essay_details') }}"></div>
+      <div class="field"><label for="other_requirements">Other requirements (one per line)</label><textarea id="other_requirements" name="other_requirements">{{ val('other_requirements') }}</textarea></div>
+      <div class="field"><label for="selection_process">Selection process</label><input type="text" id="selection_process" name="selection_process" value="{{ val('selection_process') }}"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Dates and links</h2>
+      <div class="formgrid">
+        <div class="field"><label for="deadline">Deadline</label><input type="date" id="deadline" name="deadline" value="{{ val('deadline') }}"></div>
+        <div class="field"><label for="deadline_note">Deadline note</label><input type="text" id="deadline_note" name="deadline_note" value="{{ val('deadline_note') }}"></div>
+        <div class="field"><label for="apply_url">Official apply link</label><input type="url" id="apply_url" name="apply_url" value="{{ val('apply_url') }}"></div>
+        <div class="field"><label for="source_url">Source page</label><input type="url" id="source_url" name="source_url" value="{{ val('source_url') }}"></div>
+      </div>
+      <div class="field"><label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="active"{% if d.status == 'active' %} selected{% endif %}>Published</option>
+          <option value="pending"{% if d.status == 'pending' %} selected{% endif %}>Pending review</option>
+          <option value="rejected"{% if d.status == 'rejected' %} selected{% endif %}>Rejected</option>
+        </select></div>
+    </section>
+
+    <button class="btn btn-gold" type="submit">Save scholarship</button>
+  </form>
+</div>
+</div>
+{% endblock %}

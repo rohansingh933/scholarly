@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Admin | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+    <h1 style="font-size:2rem">Admin</h1>
+    <form method="post" action="{{ url_for('admin_logout') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost btn-small" type="submit">Log out of admin</button>
+    </form>
+  </div>
+
+  <p>
+    {{ counts.get('active', 0) }} published, {{ counts.get('pending', 0) }} waiting for review,
+    {{ counts.get('rejected', 0) }} rejected. {{ users }} registered student{{ '' if users == 1 else 's' }}.
+  </p>
+  <p class="muted">Free AI use today on the site's own key: {{ usage.essay }} of {{ essay_limits[1] }} essay reviews and
+    {{ usage.search }} of {{ search_limits[1] }} searches. Each student gets {{ essay_limits[0] }} essay reviews and
+    {{ search_limits[0] }} search{{ '' if search_limits[0] == 1 else 'es' }} a day.</p>
+
+  <section class="panel" {% if running %}data-run-status data-url="{{ url_for('admin_update_status') }}"{% endif %}>
+    <h2>Update scholarships</h2>
+    <p>Searches the web for scholarships that aren't in the database. New finds go to the review queue, not to the public site. Signed-in students can also run a limited number of searches themselves from the "Find new" page.</p>
+    {% if running %}
+      <p class="notice">A search is running. This page refreshes when it finishes.</p>
+    {% elif not provider.ready %}
+      <p class="notice">No server key is set, so paste a key below to run a search. It is used once and never saved.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('admin_update') }}" autocomplete="off">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="formgrid">
+        <div class="field">
+          <label for="provider">AI provider</label>
+          <select id="provider" name="provider">
+            <option value="gemini">Google Gemini</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="api_key">API key{% if provider.ready %} (optional){% endif %}</label>
+          <input type="password" id="api_key" name="api_key" autocomplete="off" spellcheck="false">
+          <span class="hint">{% if provider.ready %}Leave blank to use the server's key.{% else %}Used once, not saved.{% endif %}</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="focus">Focus (optional)</label>
+        <input type="text" id="focus" name="focus" maxlength="200" placeholder="e.g. scholarships for girls in engineering, or Delhi state schemes">
+      </div>
+      <button class="btn btn-gold" type="submit"{% if running %} disabled{% endif %}>Search for new scholarships</button>
+      {% if counts.get('pending', 0) %}<a class="btn btn-ghost" href="{{ url_for('admin_review') }}">Review {{ counts.get('pending', 0) }} pending</a>{% endif %}
+    </form>
+
+    {% if runs %}
+    <h3 style="margin-top:1.2rem">Recent searches</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Started (UTC)</th><th>By</th><th>Provider</th><th>Status</th><th>Found</th><th>Added</th><th>Notes</th></tr></thead>
+        <tbody>
+        {% for r in runs %}
+          <tr><td>{{ r.started_at }}</td><td>{{ 'Admin' if r.triggered_by == 'admin' else 'Student ' ~ r.triggered_by.split(':')[1] }}</td><td>{{ r.provider }}</td><td><span class="pill pill-{{ r.status }}">{{ r.status }}</span></td>
+              <td>{{ r.found }}</td><td>{{ r.added }}</td><td>{{ r.message or r.focus or '' }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </section>
+
+  <section>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+      <h2>All scholarships</h2>
+      <a class="btn btn-small" href="{{ url_for('admin_edit') }}">Add a scholarship</a>
+    </div>
+    <nav class="tabs" aria-label="Filter by status">
+      <a href="{{ url_for('admin') }}"{% if not status_filter %} aria-current="page"{% endif %}>All</a>
+      <a href="{{ url_for('admin', status='active') }}"{% if status_filter == 'active' %} aria-current="page"{% endif %}>Published</a>
+      <a href="{{ url_for('admin', status='pending') }}"{% if status_filter == 'pending' %} aria-current="page"{% endif %}>Pending</a>
+      <a href="{{ url_for('admin', status='rejected') }}"{% if status_filter == 'rejected' %} aria-current="page"{% endif %}>Rejected</a>
+    </nav>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Deadline</th><th>Status</th><th>Source</th><th>Actions</th></tr></thead>
+        <tbody>
+        {% for s in rows %}
+          <tr>
+            <td><a href="{{ url_for('detail', sid=s.id) }}">{{ s.name }}</a><br><span class="muted">{{ s.provider }}</span></td>
+            <td>{{ s.provider_type }}</td>
+            <td>{{ (s.deadline|nicedate) or '-' }}</td>
+            <td><span class="pill pill-{{ s.status }}">{{ s.status }}</span></td>
+            <td>{{ s.source }}</td>
+            <td>
+              <a href="{{ url_for('admin_edit', sid=s.id) }}">Edit</a>
+              <form class="inline" method="post" action="{{ url_for('admin_delete', sid=s.id) }}" onsubmit="return confirm('Delete this scholarship for good?');">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <button class="linklike" style="color:var(--red);margin-left:.6rem" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No scholarships here.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+</div>
+{% endblock %}

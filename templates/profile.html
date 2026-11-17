@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import select, state_select, row with context %}
+{% block title %}Your profile | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap profile-grid">
+  <section>
+    <h1 style="font-size:2rem">Hi {{ current_user.name.split(' ')[0] }}, check your details</h1>
+    <p class="muted">Every match on the site is based on these. Leave blank anything you're unsure about.</p>
+    <form class="panel" method="post" action="{{ url_for('profile') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="formgrid">
+        <div class="field"><label for="f-course">Course</label>{{ select('course', COURSES, p.course, 'Choose') }}</div>
+        <div class="field"><label for="f-level">Level</label>{{ select('level', LEVELS, p.level, 'Choose') }}</div>
+        <div class="field"><label for="f-year">Year of study</label>{{ select('year', YEARS, p.year, 'Choose') }}</div>
+        <div class="field"><label for="f-percentage">Latest marks (%)</label><input type="number" name="percentage" id="f-percentage" min="0" max="100" step="0.1" value="{{ p.percentage if p.percentage is not none else '' }}"></div>
+        <div class="field"><label for="f-category">Category</label>{{ select('category', CATEGORIES, p.category, 'Choose') }}</div>
+        <div class="field"><label for="f-gender">Gender</label>{{ select('gender', GENDERS, p.gender, 'Choose') }}</div>
+        <div class="field"><label for="f-age">Age</label><input type="number" name="age" id="f-age" min="14" max="60" value="{{ p.age if p.age is not none else '' }}"></div>
+        <div class="field"><label for="f-state">State you live in</label>{{ state_select(p.state) }}</div>
+      </div>
+      <div class="field">
+        <label for="f-income">Family income per year (₹)</label>
+        <input type="number" inputmode="numeric" name="income" id="f-income" min="0" step="1000" placeholder="e.g. 450000" value="{{ p.income if p.income is not none else '' }}">
+        <span class="hint">Total from all earning members, as on your income certificate.</span>
+      </div>
+      <label class="check"><input type="checkbox" name="minority" value="1"{% if p.minority %} checked{% endif %}> I belong to a minority community</label>
+      <label class="check"><input type="checkbox" name="disability" value="1"{% if p.disability %} checked{% endif %}> I have a disability (40% or more)</label>
+      <button class="btn btn-gold" type="submit">Save profile</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Your best matches</h2>
+    {% if top %}
+      {% for r in top %}{{ row(r, saved, true) }}{% endfor %}
+      <p><a href="{{ url_for('scholarships', profile=1) }}">See all matches</a></p>
+    {% else %}
+      <div class="empty-state">
+        <p>Save your details and your matches show up here, with the closest deadline first.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+</div>
+{% endblock %}

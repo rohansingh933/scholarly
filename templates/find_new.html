@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Find new scholarships | Scholarly{% endblock %}
+{% block content %}
+<div class="narrow" style="width:min(640px, 100% - 32px)">
+  <h1 style="font-size:2rem">Help find new scholarships</h1>
+  <p class="muted">Scholarly can search the web for scholarships we don't list yet. Whatever it finds is checked by an admin before anyone sees it.</p>
+
+  <section class="panel" {% if running %}data-run-status data-url="{{ url_for('find_new_status') }}"{% endif %}>
+    {% if running %}
+      <p class="notice">Your search is running. This page refreshes when it finishes.</p>
+    {% elif last %}
+      <p><strong>Your last search:</strong>
+        {% if last.status == 'done' %}found {{ last.found }}, sent {{ last.added }} new for admin review.
+        {% else %}it didn't finish. {{ last.message }}{% endif %}</p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('find_new') }}" autocomplete="off">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="focus">What should it look for? (optional)</label>
+        <input type="text" id="focus" name="focus" maxlength="200" placeholder="e.g. scholarships for commerce students in Delhi">
+      </div>
+
+      {% if free_ok %}
+        <p class="notice" style="background:var(--green-bg);color:var(--green)">Free for students: you have {{ left.user_left }} of {{ left.user_limit }} search{{ '' if left.user_limit == 1 else 'es' }} left today.</p>
+      {% elif left.user_left == 0 or left.global_left == 0 %}
+        <p class="notice">The free searches for today are used up. They come back tomorrow, or open the box below to use your own key.</p>
+      {% else %}
+        <p class="notice">Free searching isn't switched on right now. Open the box below and use your own key.</p>
+      {% endif %}
+
+      <details class="byo"{% if not free_ok %} open{% endif %}>
+        <summary>Use my own key instead</summary>
+        <p class="hint" style="margin-top:.6rem">Your own key has no daily limit from us.</p>
+        <div class="field">
+          <label for="provider">AI provider</label>
+          <select id="provider" name="provider">
+            <option value="gemini">Google Gemini (has a free allowance)</option>
+            <option value="openai">OpenAI (paid account needed)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="api_key">Your API key</label>
+          <input type="password" id="api_key" name="api_key" autocomplete="off" spellcheck="false">
+          <span class="hint">Used for this search only. We never save it.</span>
+        </div>
+        <label class="check"><input type="checkbox" data-remember-key> Remember this key on this device</label>
+        <p class="hint" style="margin:-.3rem 0 .8rem">It stays in this browser only and is never saved on our server. Don't tick this on a shared or school computer.
+          <span data-key-note></span> <button type="button" class="linklike" data-forget-key hidden>Forget saved key</button></p>
+        <ul class="plainlist">
+          <li>Gemini: sign in at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a> and choose Create API key.</li>
+          <li>OpenAI: create a key in your account on platform.openai.com. It needs billing set up.</li>
+        </ul>
+      </details>
+
+      <button class="btn btn-gold" type="submit"{% if running %} disabled{% endif %}>Search for new scholarships</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

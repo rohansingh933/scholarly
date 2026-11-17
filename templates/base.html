@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Scholarly: scholarships you qualify for{% endblock %}</title>
+  <meta name="description" content="Find government and private scholarships in India that match your course, category and family income, sorted by deadline.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="{{ url_for('index') }}">Scholarly</a>
+    <nav aria-label="Main">
+      <a href="{{ url_for('scholarships') }}">All scholarships</a>
+      {% if current_user %}
+        <a href="{{ url_for('scholarships', profile=1) }}">My matches</a>
+        <a href="{{ url_for('saved_page') }}">Saved</a>
+        <a href="{{ url_for('essay_coach_page') }}">Essay help</a>
+        <a href="{{ url_for('find_new') }}">Find new</a>
+        <a href="{{ url_for('profile') }}">Profile</a>
+        <form class="inline" method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="linklike" type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="btn btn-gold btn-small" href="{{ url_for('register') }}">Create account</a>
+      {% endif %}
+      {% if is_admin %}<a href="{{ url_for('admin') }}">Admin</a>{% endif %}
+    </nav>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="wrap flash-wrap" role="status">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Scholarship rules and dates change every year. Always confirm on the official page before you apply, and never pay anyone to apply for a scholarship.</p>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

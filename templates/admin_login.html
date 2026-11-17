@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Admin login | Scholarly{% endblock %}
+{% block content %}
+<div class="narrow">
+  <h1 style="font-size:2rem">Admin login</h1>
+  <form class="panel" method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field"><label for="password">Admin password</label><input type="password" id="password" name="password" autocomplete="current-password" required></div>
+    <button class="btn" type="submit" style="width:100%">Log in as admin</button>
+  </form>
+</div>
+{% endblock %}

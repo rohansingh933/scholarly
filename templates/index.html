@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import select with context %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Find the scholarships you actually qualify for</h1>
+      <p class="lede">Tell us your course, category and family income. We hide what you can't get and put what closes first at the top.</p>
+
+      <form class="quick" action="{{ url_for('scholarships') }}" method="get">
+        <input type="hidden" name="f" value="1">
+        <div class="quick-grid">
+          <div class="field"><label for="f-course">Course</label>{{ select('course', COURSES, p.course, 'Choose your course') }}</div>
+          <div class="field"><label for="f-level">Level</label>{{ select('level', LEVELS, p.level, 'Choose your level') }}</div>
+          <div class="field"><label for="f-category">Category</label>{{ select('category', CATEGORIES, p.category, 'Choose your category') }}</div>
+          <div class="field">
+            <label for="f-income">Family income per year (₹)</label>
+            <input type="number" inputmode="numeric" min="0" step="1000" name="income" id="f-income" placeholder="e.g. 450000" value="{{ p.income if p.income is not none else '' }}">
+          </div>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn-gold" type="submit">Show my matches</button>
+          <a class="plain" href="{{ url_for('scholarships') }}">Browse all {{ stats.total }} scholarships</a>
+        </div>
+      </form>
+      <p class="fineprint">{{ stats.government }} government and {{ stats.private }} private scholarships are open or have no fixed date right now.</p>
+    </div>
+
+    <aside class="closing" aria-labelledby="closing-h">
+      <h2 id="closing-h">Closing soon</h2>
+      {% if closing %}
+      <ol class="closing-list">
+        {% for r in closing %}
+        <li>
+          <a href="{{ url_for('detail', sid=r.row.id) }}">
+            <span class="chip chip-{{ r.deadline.state }}">{{ r.deadline.days }} {{ 'day' if r.deadline.days == 1 else 'days' }}</span>
+            <span><strong>{{ r.row.name }}</strong><small>{{ r.row.provider }}</small></span>
+          </a>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+        <p class="empty">No scholarship has a fixed deadline right now. Browse the full list for rolling ones.</p>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><h3>Tell us about you</h3><p>Course, level, category, family income, marks and state. Leave out anything you're unsure about.</p></li>
+      <li><h3>See only what fits</h3><p>Scholarships you can't get disappear. The rest are marked Eligible, or Maybe eligible with what to confirm.</p></li>
+      <li><h3>Prepare and apply</h3><p>Each page lists the documents, any essay, the selection steps and the official link, with the days left.</p></li>
+    </ol>
+  </div>
+</section>
+
+{% if not current_user %}
+<section class="cta-band">
+  <div class="wrap">
+    <p>Create a free account to save your details and the scholarships you're tracking.</p>
+    <a class="btn" href="{{ url_for('register') }}">Create account</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

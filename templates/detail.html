@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ s.name }} | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap">
+  <p><a href="{{ url_for('scholarships') }}">Back to scholarships</a></p>
+
+  {% if s.status != 'active' %}
+    <div class="notice">This scholarship is <strong>{{ s.status }}</strong> and is only visible to you as admin.</div>
+  {% endif %}
+
+  <div class="detail-grid">
+    <div>
+      <h1 style="font-size:2.2rem">{{ s.name }}</h1>
+      <p class="provider" style="font-size:1.1rem">{{ s.provider }}</p>
+      <ul class="tags">
+        <li class="tag tag-{{ s.provider_type }}">{{ 'Government' if s.provider_type == 'government' else 'Private' }}</li>
+        {% if s.essay_required %}<li class="tag">Essay needed</li>{% endif %}
+        {% if s.source == 'ai' and is_admin %}<li class="tag tag-warn">Found by web search</li>{% endif %}
+      </ul>
+
+      {% if s.source == 'seed' and not s.verified_on %}
+        <div class="notice">We haven't checked this scholarship's 2026-27 details yet. Treat the rules below as a guide and confirm them on the official page.</div>
+      {% endif %}
+
+      {% if s.description %}<p style="font-size:1.08rem">{{ s.description }}</p>{% endif %}
+      <p class="amount" style="font-size:1.1rem">{{ s.amount_text or 'Amount not stated' }}</p>
+
+      {% if match %}
+      <section class="panel fitpanel fit-{{ match.status }}">
+        <h2>
+          {% if match.status == 'eligible' %}You meet the listed criteria
+          {% elif match.status == 'maybe' %}You may qualify: confirm {{ match.unknown|length }} thing{{ '' if match.unknown|length == 1 else 's' }}
+          {% else %}You may not qualify for this one{% endif %}
+        </h2>
+        <ul class="checks">
+          {% for t in match.ok %}<li class="yes"><span class="sr">Met: </span>{{ t }}</li>{% endfor %}
+          {% for t in match.unknown %}<li class="ask"><span class="sr">To confirm: </span>{{ t }}</li>{% endfor %}
+          {% for t in match.bad %}<li class="no"><span class="sr">Not met: </span>{{ t }}</li>{% endfor %}
+        </ul>
+        {% if match.unknown %}<a href="{{ url_for('scholarships', f=1) }}">Add the missing details</a>{% endif %}
+      </section>
+      {% else %}
+      <section class="panel">
+        <h2>Check if you qualify</h2>
+        <p>Enter your course, category and income once and every scholarship page will tell you what you meet.</p>
+        <a class="btn" href="{{ url_for('scholarships') }}">Enter my details</a>
+      </section>
+      {% endif %}
+
+      <section class="panel">
+        <h2>What you need to prepare</h2>
+        {% set docs = s.documents|lines %}
+        {% if docs %}
+          <ul class="plainlist">{% for d in docs %}<li>{{ d }}</li>{% endfor %}</ul>
+        {% else %}
+          <p class="muted">The documents list isn't recorded yet. Check the official page.</p>
+        {% endif %}
+        {% if s.essay_required %}
+          <p style="margin-top:.8rem"><strong>Essay:</strong> {{ s.essay_details or 'An essay is part of the application.' }}</p>
+          <a class="btn btn-ghost btn-small" href="{{ url_for('essay_coach_page', s=s.id) }}">Get help with this essay</a>
+        {% else %}
+          <p class="muted" style="margin-top:.8rem">No essay is listed for this scholarship.</p>
+        {% endif %}
+      </section>
+
+      {% if s.other_requirements or s.selection_process %}
+      <section class="panel">
+        <h2>Other requirements and selection</h2>
+        {% set others = s.other_requirements|lines %}
+        {% if others %}<ul class="plainlist">{% for o in others %}<li>{{ o }}</li>{% endfor %}</ul>{% endif %}
+        {% if s.selection_process %}<p style="margin-top:.6rem"><strong>How winners are chosen:</strong> {{ s.selection_process }}</p>{% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside>
+      <section class="panel deadline-panel {{ dl.state }}">
+        <div class="big">{{ dl.text }}</div>
+        {% if dl.state != 'rolling' and s.deadline_note %}<p>{{ s.deadline_note }}</p>{% endif %}
+        {% if s.apply_url %}
+          <a class="btn" href="{{ s.apply_url }}" target="_blank" rel="noopener noreferrer">Go to the official page</a>
+        {% endif %}
+      </section>
+
+      {% if current_user %}
+      <form method="post" action="{{ url_for('toggle_save', sid=s.id) }}" style="margin-bottom:1rem">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ url_for('detail', sid=s.id) }}">
+        <button class="btn btn-ghost" style="width:100%" type="submit">{{ 'Remove from saved' if saved else 'Save this scholarship' }}</button>
+      </form>
+      {% else %}
+      <p class="fineprint"><a href="{{ url_for('login', next=url_for('detail', sid=s.id)) }}">Log in</a> or <a href="{{ url_for('register') }}">create an account</a> to save scholarships.</p>
+      {% endif %}
+
+      <section class="panel">
+        <h2>Who can apply</h2>
+        <dl class="crit">
+          {% for k, v in crit %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
+        </dl>
+      </section>
+
+      <p class="fineprint">
+        {% if s.source_url %}Details taken from <a href="{{ s.source_url }}" target="_blank" rel="noopener noreferrer">this page</a>.{% endif %}
+        {% if s.verified_on %} Last checked {{ s.verified_on|nicedate }}.{% endif %}
+        Confirm everything on the official page before applying.
+      </p>
+    </aside>
+  </div>
+</div>
+</div>
+{% endblock %}

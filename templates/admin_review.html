@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Review new scholarships | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap">
+  <p><a href="{{ url_for('admin') }}">Back to admin</a></p>
+  <h1 style="font-size:2rem">Review new scholarships</h1>
+  <p class="muted">AI search can get names, dates and amounts wrong. Open each source link and check before you approve.</p>
+
+  {% for item in rows %}
+  {% set s = item.s %}
+  <article class="review-card">
+    <h2>{{ s.name }}</h2>
+    <p class="provider">{{ s.provider }} ({{ s.provider_type }})</p>
+    {% if s.description %}<p>{{ s.description }}</p>{% endif %}
+    <p><strong>Amount:</strong> {{ s.amount_text or 'not stated' }}. <strong>Deadline:</strong> {{ item.dl.text }}{% if s.deadline_note %}. {{ s.deadline_note }}{% endif %}</p>
+    <dl class="crit">
+      {% for k, v in criteria(s) %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
+    </dl>
+    {% set docs = s.documents|lines %}
+    {% if docs %}<p style="margin-top:.7rem"><strong>Documents:</strong> {{ docs|join('; ') }}</p>{% endif %}
+    {% if s.essay_required %}<p><strong>Essay:</strong> {{ s.essay_details or 'Yes' }}</p>{% endif %}
+    <p class="fineprint">
+      Source: <a href="{{ s.source_url }}" target="_blank" rel="noopener noreferrer">{{ s.source_url }}</a>
+      {% if s.apply_url and s.apply_url != s.source_url %}<br>Apply link: <a href="{{ s.apply_url }}" target="_blank" rel="noopener noreferrer">{{ s.apply_url }}</a>{% endif %}
+    </p>
+    <div class="review-actions">
+      <form method="post" action="{{ url_for('admin_set_status', sid=s.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="status" value="active">
+        <button class="btn" type="submit">Approve and publish</button>
+      </form>
+      <a class="btn btn-ghost" href="{{ url_for('admin_edit', sid=s.id) }}">Edit first</a>
+      <form method="post" action="{{ url_for('admin_set_status', sid=s.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="status" value="rejected">
+        <button class="btn btn-ghost" type="submit">Reject</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state">
+    <h2>Nothing to review</h2>
+    <p>New scholarships found by the AI search show up here.</p>
+    <a class="btn" href="{{ url_for('admin') }}">Back to admin</a>
+  </div>
+  {% endfor %}
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import row with context %}
+{% block title %}Saved scholarships | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap">
+  <h1 style="font-size:2rem">Saved scholarships</h1>
+  <p class="muted">Sorted by deadline.</p>
+  {% for r in results %}
+    {{ row(r, saved, use_profile) }}
+  {% else %}
+    <div class="empty-state">
+      <h2>Nothing saved yet</h2>
+      <p>Press Save on any scholarship to keep track of it here.</p>
+      <a class="btn" href="{{ url_for('scholarships', profile=1) }}">See my matches</a>
+    </div>
+  {% endfor %}
+</div>
+</div>
+{% endblock %}

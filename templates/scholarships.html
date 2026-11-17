@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "_macros.html" import select, state_select, row with context %}
+{% block title %}Scholarships{% if use_profile %} that fit you{% endif %} | Scholarly{% endblock %}
+{% block content %}
+<div class="page">
+<div class="wrap layout">
+
+  <details class="filters" id="filters" open>
+    <summary>Your details and filters</summary>
+    <form method="get" action="{{ url_for('scholarships') }}">
+      <input type="hidden" name="f" value="1">
+      <div class="field">
+        <label for="f-q">Search</label>
+        <input type="search" name="q" id="f-q" value="{{ q }}" placeholder="Name, provider or keyword">
+      </div>
+      <div class="field">
+        <label for="f-type">Offered by</label>
+        <select name="type" id="f-type">
+          <option value="">Government and private</option>
+          <option value="government"{% if ptype == 'government' %} selected{% endif %}>Government</option>
+          <option value="private"{% if ptype == 'private' %} selected{% endif %}>Private (companies, trusts)</option>
+        </select>
+      </div>
+      <div class="field"><label for="f-course">Course</label>{{ select('course', COURSES, p.course, 'Any course') }}</div>
+      <div class="row2">
+        <div class="field"><label for="f-level">Level</label>{{ select('level', LEVELS, p.level, 'Any') }}</div>
+        <div class="field"><label for="f-year">Year</label>{{ select('year', YEARS, p.year, 'Any') }}</div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="f-category">Category</label>{{ select('category', CATEGORIES, p.category, 'Any') }}</div>
+        <div class="field"><label for="f-gender">Gender</label>{{ select('gender', GENDERS, p.gender, 'Any') }}</div>
+      </div>
+      <div class="field"><label for="f-state">State you live in</label>{{ state_select(p.state) }}</div>
+      <div class="row2">
+        <div class="field"><label for="f-age">Age</label><input type="number" name="age" id="f-age" min="14" max="60" value="{{ p.age if p.age is not none else '' }}"></div>
+        <div class="field"><label for="f-percentage">Marks (%)</label><input type="number" name="percentage" id="f-percentage" min="0" max="100" step="0.1" value="{{ p.percentage if p.percentage is not none else '' }}"></div>
+      </div>
+      <div class="field">
+        <label for="f-income">Family income per year (₹)</label>
+        <input type="number" inputmode="numeric" name="income" id="f-income" min="0" step="1000" placeholder="e.g. 450000" value="{{ p.income if p.income is not none else '' }}">
+      </div>
+      <label class="check"><input type="checkbox" name="minority" value="1"{% if p.minority %} checked{% endif %}> I belong to a minority community</label>
+      <label class="check"><input type="checkbox" name="disability" value="1"{% if p.disability %} checked{% endif %}> I have a disability (40% or more)</label>
+      <label class="check"><input type="checkbox" name="include_closed" value="1"{% if include_closed %} checked{% endif %}> Also show closed scholarships</label>
+      <div class="field">
+        <label for="f-sort">Sort by</label>
+        <select name="sort" id="f-sort">
+          <option value="best"{% if sort == 'best' %} selected{% endif %}>Best match, then deadline</option>
+          <option value="deadline"{% if sort == 'deadline' %} selected{% endif %}>Closing soonest</option>
+          <option value="amount"{% if sort == 'amount' %} selected{% endif %}>Highest amount</option>
+          <option value="name"{% if sort == 'name' %} selected{% endif %}>Name</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn" type="submit">Apply filters</button>
+        <a href="{{ url_for('scholarships', f=1) }}">Clear all</a>
+      </div>
+      <p class="hint" style="margin-top:.8rem">We remember these in this browser so each scholarship page can check your eligibility.</p>
+    </form>
+  </details>
+
+  <section aria-live="polite">
+    <div class="results-head">
+      {% if use_profile %}
+        <h1 style="font-size:1.8rem">{{ results|length }} scholarship{{ '' if results|length == 1 else 's' }} fit your details</h1>
+        <p>{{ counts.eligible }} eligible{% if counts.maybe %}, {{ counts.maybe }} need one more detail from you{% endif %}.
+        {% if from_account %}Using your saved profile. <a href="{{ url_for('profile') }}">Edit it</a>.{% endif %}</p>
+      {% else %}
+        <h1 style="font-size:1.8rem">{{ results|length }} open scholarship{{ '' if results|length == 1 else 's' }}</h1>
+        <p>Add your details on the left to hide the ones you can't get.</p>
+      {% endif %}
+    </div>
+
+    {% for r in results %}
+      {{ row(r, saved, use_profile) }}
+    {% else %}
+      <div class="empty-state">
+        <h2>Nothing matches yet</h2>
+        <p>Try one of these:</p>
+        <ul class="plainlist">
+          <li>Leave blank the details you're not sure about. They show as "to confirm" instead of hiding a scholarship.</li>
+          <li>Tick "Also show closed scholarships" to see ones that ran earlier this year.</li>
+          <li>Remove the search words or the government / private filter.</li>
+        </ul>
+        <p style="margin-top:.8rem"><a class="btn btn-ghost btn-small" href="{{ url_for('scholarships', f=1) }}">Clear all filters</a></p>
+      </div>
+    {% endfor %}
+  </section>
+
+</div>
+</div>
+{% endblock %}
